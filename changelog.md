@@ -9,3 +9,7 @@ result :
 
 changing layout: AoS => SoA
 (nolan) 626.3245 FPS, 1596.6419999999998 ms
+(miguel) 617.6135000000002 FPS, 1619.385 ms
+
+remove redondant computation
+(miguel) 864.9227000000001 FPS, 1156.262 ms
