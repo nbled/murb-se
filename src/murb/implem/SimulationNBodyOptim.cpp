@@ -44,7 +44,8 @@ void SimulationNBodyOptim::computeBodiesAcceleration()
             const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz; // 5 flops
 
             // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
-            const float x = this->G  / std::pow(rijSquared + softSquared, 3.f / 2.f); //3 flops
+            const float x = this->G / ((rijSquared + softSquared) * std::sqrt(rijSquared + softSquared));
+
             const float ai = x * d.m[jBody]; // 1 flops
             const float aj = x * d.m[iBody]; // 1 flops
 

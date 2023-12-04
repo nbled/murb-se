@@ -19,3 +19,6 @@ remove pow when doing a square
 
 change loop condition
 (miguel) 1035.8300000000004 FPS, 965.5302000000001 ms
+
+switched from pow(a, 3/2) to a * sqrt(a)
+(nolan) 2993.1580000000004 FPS, 334.124 ms
