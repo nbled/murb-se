@@ -26,7 +26,7 @@ void SimulationNBodyOptim::initIteration()
 
 void SimulationNBodyOptim::computeBodiesAcceleration()
 {
-    const std::vector<dataAoS_t<float>> &d = this->getBodies().getDataAoS();
+    const dataSoA_t<float> &d = this->getBodies().getDataSoA();
 
     // compute e²
     const float softSquared = std::pow(this->soft, 2); // 1 flops
@@ -35,16 +35,16 @@ void SimulationNBodyOptim::computeBodiesAcceleration()
     for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
         // flops = n * 20
         for (unsigned long jBody = iBody+1; jBody < this->getBodies().getN(); jBody++) {
-            const float rijx = d[jBody].qx - d[iBody].qx; // 1 flop
-            const float rijy = d[jBody].qy - d[iBody].qy; // 1 flop
-            const float rijz = d[jBody].qz - d[iBody].qz; // 1 flop
+            const float rijx = d.qx[jBody] - d.qx[iBody]; // 1 flop
+            const float rijy = d.qy[jBody] - d.qy[iBody]; // 1 flop
+            const float rijz = d.qz[jBody] - d.qz[iBody]; // 1 flop
 
             // compute the || rij ||² distance between body i and body j
             const float rijSquared = std::pow(rijx, 2) + std::pow(rijy, 2) + std::pow(rijz, 2); // 5 flops
 
             // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
-            const float ai = this->G * d[jBody].m / std::pow(rijSquared + softSquared, 3.f / 2.f); // 5 flops
-            const float aj = this->G * d[iBody].m / std::pow(rijSquared + softSquared, 3.f / 2.f); // 5 flops
+            const float ai = this->G * d.m[jBody] / std::pow(rijSquared + softSquared, 3.f / 2.f); // 5 flops
+            const float aj = this->G * d.m[iBody] / std::pow(rijSquared + softSquared, 3.f / 2.f); // 5 flops
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
             this->accelerations[iBody].ax += ai * rijx; // 2 flops
