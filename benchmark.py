@@ -43,7 +43,7 @@ def gen_arg_parser():
 if __name__ == "__main__":
 	parser = gen_arg_parser().parse_args()
 
-	fps, ms = run_murb_many(parser.b, parser.i, parser.n)
+	ms, fps = run_murb_many(parser.b, parser.i, parser.n)
 	print("{} FPS, {} ms".format(fps, ms))
 
 
