@@ -30,11 +30,12 @@ void SimulationNBodyOptim::computeBodiesAcceleration()
 
     // compute e²
     const float softSquared = std::pow(this->soft, 2); // 1 flops
+    unsigned long n_bodies = this->getBodies().getN();
 
     // flops = n² * 20
-    for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
+    for (unsigned long iBody = 0; iBody < n_bodies; iBody++) {
         // flops = n * 20
-        for (unsigned long jBody = iBody+1; jBody < this->getBodies().getN(); jBody++) {
+        for (unsigned long jBody = iBody+1; jBody < n_bodies; jBody++) {
             const float rijx = d.qx[jBody] - d.qx[iBody]; // 1 flop
             const float rijy = d.qy[jBody] - d.qy[iBody]; // 1 flop
             const float rijz = d.qz[jBody] - d.qz[iBody]; // 1 flop

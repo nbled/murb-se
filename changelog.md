@@ -16,3 +16,6 @@ remove redondant computation
 
 remove pow when doing a square
 (miguel) 906.2089 FPS, 1105.008 ms
+
+change loop condition
+(miguel) 1035.8300000000004 FPS, 965.5302000000001 ms
