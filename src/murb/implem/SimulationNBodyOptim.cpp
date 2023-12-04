@@ -40,7 +40,7 @@ void SimulationNBodyOptim::computeBodiesAcceleration()
             const float rijz = d.qz[jBody] - d.qz[iBody]; // 1 flop
 
             // compute the || rij ||² distance between body i and body j
-            const float rijSquared = std::pow(rijx, 2) + std::pow(rijy, 2) + std::pow(rijz, 2); // 5 flops
+            const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz; // 5 flops
 
             // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
             const float x = this->G  / std::pow(rijSquared + softSquared, 3.f / 2.f); //3 flops

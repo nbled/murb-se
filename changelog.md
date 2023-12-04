@@ -13,3 +13,6 @@ changing layout: AoS => SoA
 
 remove redondant computation
 (miguel) 864.9227000000001 FPS, 1156.262 ms
+
+remove pow when doing a square
+(miguel) 906.2089 FPS, 1105.008 ms
