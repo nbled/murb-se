@@ -22,15 +22,16 @@ def run_murb_many(bodies, iters, n, im):
 		Run ./bin/murb n times to get an average
 	"""
 
-	tot_ms = 0
-	tot_fps = 0
+	min_ms = 0
+	max_fps = 0
 
 	for _ in range(n):
 		ms, fps = run_murb_once(bodies, iters,im)
-		tot_ms += ms
-		tot_fps += fps
+		if fps > max_fps:
+			max_fps = fps
+			min_ms = ms
 	
-	return tot_ms / n, tot_fps / n
+	return min_ms, max_fps
 
 def gen_arg_parser():
 	parser = argparse.ArgumentParser(

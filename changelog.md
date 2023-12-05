@@ -22,3 +22,7 @@ change loop condition
 
 switched from pow(a, 3/2) to a * sqrt(a)
 (nolan) 2993.1580000000004 FPS, 334.124 ms
+(miguel) 3134.459 FPS, 319.0527 ms
+
+simd first version (naive)
+(miguel) 6008.78 FPS, 166.423 ms (on x86_64)
