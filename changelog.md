@@ -26,3 +26,6 @@ switched from pow(a, 3/2) to a * sqrt(a)
 
 simd first version (naive)
 (miguel) 6008.78 FPS, 166.423 ms (on x86_64)
+
+simd small improvement
+(miguel) 6130.68 FPS, 163.114 ms (on x86_64)

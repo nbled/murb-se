@@ -27,6 +27,18 @@ void SimulationNBodySIMD::initIteration()
     std::fill(this->accelerations.az.begin(),this->accelerations.az.end(),0);
 }
 
+void print_mipp_reg(mipp::Reg<float> reg) {
+    constexpr int N = mipp::N<float>();
+    float debug[N];
+    reg.store(debug);
+    printf("{");
+    for (int i=0;i<N;i++) {
+        printf("%f, ",debug[i]);
+    }
+    printf("\b}\n");
+}
+
+
 void SimulationNBodySIMD::computeBodiesAcceleration()
 {
     const dataSoA_t<float> &d = this->getBodies().getDataSoA();
@@ -39,16 +51,17 @@ void SimulationNBodySIMD::computeBodiesAcceleration()
     // flops = n² * 20
     for (unsigned long iBody = 0; iBody < n_bodies; iBody++) {
         unsigned long jBody;
+        mipp::Reg<float> i_qx = d.qx[iBody]; //we duplicate for i, and take different values for j.
+        mipp::Reg<float> i_qy = d.qy[iBody];
+        mipp::Reg<float> i_qz = d.qz[iBody];
+
         for (jBody = 0; jBody < n_bodies_rounded; jBody += N) {
-            mipp::Reg<float> i_qx = d.qx[iBody]; //we duplicate for i, and take different values for j.
             mipp::Reg<float> j_qx = &d.qx[jBody];
             mipp::Reg<float> rijx = j_qx - i_qx;
 
-            mipp::Reg<float> i_qy = d.qy[iBody];
             mipp::Reg<float> j_qy = &d.qy[jBody];
             mipp::Reg<float> rijy = j_qy - i_qy;
 
-            mipp::Reg<float> i_qz = d.qz[iBody];
             mipp::Reg<float> j_qz = &d.qz[jBody];
             mipp::Reg<float> rijz = j_qz - i_qz;
 
