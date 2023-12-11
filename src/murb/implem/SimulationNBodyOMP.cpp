@@ -5,9 +5,9 @@
 #include <limits>
 #include <string>
 
-#include "SimulationNBodyOptim.hpp"
+#include "SimulationNBodyOMP.hpp"
 
-SimulationNBodyOptim::SimulationNBodyOptim(const unsigned long nBodies, const std::string &scheme, const float soft,
+SimulationNBodyOMP::SimulationNBodyOMP(const unsigned long nBodies, const std::string &scheme, const float soft,
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
@@ -15,27 +15,32 @@ SimulationNBodyOptim::SimulationNBodyOptim(const unsigned long nBodies, const st
     this->accelerations.resize(this->getBodies().getN());
 }
 
-void SimulationNBodyOptim::initIteration()
+void SimulationNBodyOMP::initIteration()
 {
-    for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
+    unsigned long nBodies = this->getBodies().getN();
+
+    for (unsigned long iBody = 0; iBody < nBodies; iBody++) {
         this->accelerations[iBody].ax = 0.f;
         this->accelerations[iBody].ay = 0.f;
         this->accelerations[iBody].az = 0.f;
     }
 }
 
-void SimulationNBodyOptim::computeBodiesAcceleration()
+void SimulationNBodyOMP::computeBodiesAcceleration()
 {
     const dataSoA_t<float> &d = this->getBodies().getDataSoA();
 
     // compute e²
     const float softSquared = std::pow(this->soft, 2); // 1 flops
-    unsigned long n_bodies = this->getBodies().getN();
+    unsigned long nBodies = this->getBodies().getN();
 
     // flops = n² * 20
-    for (unsigned long iBody = 0; iBody < n_bodies; iBody++) {
+#pragma omp parallel
+{
+#pragma omp for
+    for (unsigned long iBody = 0; iBody < nBodies; iBody++) {
         // flops = n * 20
-        for (unsigned long jBody = iBody+1; jBody < n_bodies; jBody++) {
+        for (unsigned long jBody = iBody + 1; jBody < nBodies; jBody++) {
             const float rijx = d.qx[jBody] - d.qx[iBody]; // 1 flop
             const float rijy = d.qy[jBody] - d.qy[iBody]; // 1 flop
             const float rijz = d.qz[jBody] - d.qz[iBody]; // 1 flop
@@ -45,6 +50,7 @@ void SimulationNBodyOptim::computeBodiesAcceleration()
 
             // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
             const float x = this->G / ((rijSquared + softSquared) * std::sqrt(rijSquared + softSquared));
+
             const float ai = x * d.m[jBody]; // 1 flops
             const float aj = x * d.m[iBody]; // 1 flops
 
@@ -52,7 +58,7 @@ void SimulationNBodyOptim::computeBodiesAcceleration()
             this->accelerations[iBody].ax += ai * rijx; // 2 flops
             this->accelerations[iBody].ay += ai * rijy; // 2 flops
             this->accelerations[iBody].az += ai * rijz; // 2 flops
-
+            
             this->accelerations[jBody].ax += aj * -rijx; // 2 flops
             this->accelerations[jBody].ay += aj * -rijy; // 2 flops
             this->accelerations[jBody].az += aj * -rijz; // 2 flops
@@ -60,7 +66,9 @@ void SimulationNBodyOptim::computeBodiesAcceleration()
     }
 }
 
-void SimulationNBodyOptim::computeOneIteration()
+}
+
+void SimulationNBodyOMP::computeOneIteration()
 {
     this->initIteration();
     this->computeBodiesAcceleration();
