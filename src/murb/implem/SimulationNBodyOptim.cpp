@@ -26,8 +26,8 @@ void SimulationNBodyOptim::initIteration()
 
 void SimulationNBodyOptim::computeBodiesAcceleration()
 {
-    const dataSoA_t<float> &d = this->getBodies().getDataSoA();
-
+    //const dataSoA_t<float> &d = this->getBodies().getDataSoA();
+    const std::vector<dataAoS_t<float>> &d = this->getBodies().getDataAoS();
     // compute e²
     const float softSquared = std::pow(this->soft, 2); // 1 flops
     unsigned long n_bodies = this->getBodies().getN();
@@ -36,17 +36,28 @@ void SimulationNBodyOptim::computeBodiesAcceleration()
     for (unsigned long iBody = 0; iBody < n_bodies; iBody++) {
         // flops = n * 20
         for (unsigned long jBody = iBody+1; jBody < n_bodies; jBody++) {
-            const float rijx = d.qx[jBody] - d.qx[iBody]; // 1 flop
-            const float rijy = d.qy[jBody] - d.qy[iBody]; // 1 flop
-            const float rijz = d.qz[jBody] - d.qz[iBody]; // 1 flop
+            // const float rijx = d.qx[jBody] - d.qx[iBody]; // 1 flop
+            // const float rijy = d.qy[jBody] - d.qy[iBody]; // 1 flop
+            // const float rijz = d.qz[jBody] - d.qz[iBody]; // 1 flop
+
+            const float rijx = d[jBody].qx - d[iBody].qx; // 1 flop
+            const float rijy = d[jBody].qy - d[iBody].qy; // 1 flop
+            const float rijz = d[jBody].qz - d[iBody].qz; // 1 flop
+
+
 
             // compute the || rij ||² distance between body i and body j
             const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz; // 5 flops
 
             // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
             const float x = this->G / ((rijSquared + softSquared) * std::sqrt(rijSquared + softSquared));
-            const float ai = x * d.m[jBody]; // 1 flops
-            const float aj = x * d.m[iBody]; // 1 flops
+
+            // const float ai = x * d.m[jBody]; // 1 flops
+            // const float aj = x * d.m[iBody]; // 1 flops
+
+            const float ai = x * d[jBody].m; // 1 flops
+            const float aj = x * d[iBody].m; // 1 flops
+
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
             this->accelerations[iBody].ax += ai * rijx; // 2 flops
