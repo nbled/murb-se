@@ -6,7 +6,7 @@
 #include "core/SimulationNBodyInterface.hpp"
 #include "core/Bodies.hpp"
 
-#define THETA 0.5f
+#define THETA 0.29f //0.3 doesn't pass the tests
 
 struct Octree;
 
