@@ -117,6 +117,7 @@ void SimulationNBodyBarnesHut::insertBody(Octree* tree, const dataAoS_t<float> *
 
             this->insertBody(tree,other_body); //Now that we have changed the type of the node we reinsert the original body, and the new one
             this->insertBody(tree,body);       //They will go on to the good external node.
+            // this->updateTree(tree);
 
         }
         return;
@@ -131,6 +132,7 @@ void SimulationNBodyBarnesHut::insertBody(Octree* tree, const dataAoS_t<float> *
     // printf("%e %e %e going to %d\n",body->qx,body->qy,body->qz,index);
 
     this->insertBody(tree->data.internal.children[index], body);
+    // this->updateTree(tree);
 }
 
 void SimulationNBodyBarnesHut::updateTree(Octree* tree) { //Could probably be fused with `insertBody`

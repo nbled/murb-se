@@ -23,6 +23,8 @@
 #include "implem/SimulationNBodySIMD.hpp"
 #include "implem/SimulationNBodyOMP.hpp"
 #include "implem/SimulationNBodyBarnesHut.hpp"
+#include "implem/SimulationNBodyBarnesHutOMP.hpp"
+
 
 /* global variables */
 unsigned long NBodies;               /*!< Number of bodies. */
@@ -83,6 +85,7 @@ void argsReader(int argc, char **argv)
                      "\t\t\t - \"cpu+omp\"\n"
                      "\t\t\t - \"cpu+simd\"\n"
                      "\t\t\t - \"cpu+barnesHut\"\n"
+                     "\t\t\t - \"cpu+barnesHut+omp\"\n"
                      "\t\t\t ----";
     faculArgs["-soft"] = "softeningFactor";
     docArgs["-soft"] = "softening factor.";
@@ -199,6 +202,8 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodyOMP(NBodies, BodiesScheme, Softening);
     } else if (ImplTag == "cpu+barnesHut") {
         simu = new SimulationNBodyBarnesHut(NBodies, BodiesScheme, Softening);
+    } else if (ImplTag == "cpu+barnesHut+omp") {
+        simu = new SimulationNBodyBarnesHutOMP(NBodies, BodiesScheme, Softening);
     } else {
         std::cout << "Implementation '" << ImplTag << "' does not exist... Exiting." << std::endl;
         exit(-1);

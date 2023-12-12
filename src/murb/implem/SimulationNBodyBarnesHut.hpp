@@ -46,7 +46,7 @@ class SimulationNBodyBarnesHut : public SimulationNBodyInterface {
 
   protected:
     void initIteration();
-    void computeBodiesAcceleration();
+    virtual void computeBodiesAcceleration();
     void getBoundingBox(float*,float*,float*,float*,float*,float*);
     void insertBody(Octree* tree, const dataAoS_t<float> *body);
     void updateTree(Octree* tree);
