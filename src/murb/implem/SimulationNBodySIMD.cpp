@@ -61,7 +61,8 @@ void SimulationNBodySIMD::computeBodiesAcceleration()
         mipp::Reg<float> softSquared_v = softSquared;
         mipp::Reg<float> G_v = this->G;
 
-        for (jBody = 0; jBody <= n_bodies_rounded; jBody += N) {
+        for (jBody = 0; jBody < n_bodies_rounded; jBody += N) {
+        //for (jBody = iBody+1; jBody <= n_bodies - N; jBody += N) {
             mipp::Reg<float> j_qx = &d.qx[jBody];
             mipp::Reg<float> rijx = j_qx - i_qx;
 
