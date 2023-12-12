@@ -61,7 +61,7 @@ void SimulationNBodySIMD::computeBodiesAcceleration()
         mipp::Reg<float> softSquared_v = softSquared;
         mipp::Reg<float> G_v = this->G;
 
-        for (jBody = 0; jBody < n_bodies_rounded; jBody += N) {
+        for (jBody = 0; jBody < n_bodies; jBody += N) {
         //for (jBody = iBody+1; jBody <= n_bodies - N; jBody += N) {
             mipp::Reg<float> j_qx = &d.qx[jBody];
             mipp::Reg<float> rijx = j_qx - i_qx;
@@ -117,33 +117,9 @@ void SimulationNBodySIMD::computeBodiesAcceleration()
 
 
         }
-        
-        //We finish the remaining bodies using the code from optim
-        for (; jBody < n_bodies; jBody++) {
-            const float rijx = d.qx[jBody] - d.qx[iBody]; // 1 flop
-            const float rijy = d.qy[jBody] - d.qy[iBody]; // 1 flop
-            const float rijz = d.qz[jBody] - d.qz[iBody]; // 1 flop
-
-            // compute the || rij ||² distance between body i and body j
-            const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz; // 5 flops
-
-            // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
-            const float x = this->G / ((rijSquared + softSquared) * std::sqrt(rijSquared + softSquared));
-            const float ai = x * d.m[jBody]; // 1 flops
-//            const float aj = x * d.m[iBody]; // 1 flops
-
-            // add the acceleration value into the acceleration vector: ai += || ai ||.rij
-            this->accelerations.ax[iBody] += ai * rijx; // 2 flops
-            this->accelerations.ay[iBody] += ai * rijy; // 2 flops
-            this->accelerations.az[iBody] += ai * rijz; // 2 flops
-
-            // this->accelerations.ax[jBody] += aj * -rijx; // 2 flops
-            // this->accelerations.ay[jBody] += aj * -rijy; // 2 flops
-            // this->accelerations.az[jBody] += aj * -rijz; // 2 flops
-
-        }
     }
 }
+
 
 void SimulationNBodySIMD::computeOneIteration()
 {
