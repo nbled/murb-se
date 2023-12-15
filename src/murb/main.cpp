@@ -22,6 +22,7 @@
 #include "implem/SimulationNBodyOptim.hpp"
 #include "implem/SimulationNBodySIMD.hpp"
 #include "implem/SimulationNBodyOMP.hpp"
+#include "implem/SimulationNBodySIMD_OMP.hpp"
 #include "implem/SimulationNBodyBarnesHut.hpp"
 #include "implem/SimulationNBodyBarnesHutOMP.hpp"
 
@@ -84,6 +85,7 @@ void argsReader(int argc, char **argv)
                      "\t\t\t - \"cpu+optim\"\n"
                      "\t\t\t - \"cpu+omp\"\n"
                      "\t\t\t - \"cpu+simd\"\n"
+                     "\t\t\t - \"cpu+simd+omp\"\n"
                      "\t\t\t - \"cpu+barnesHut\"\n"
                      "\t\t\t - \"cpu+barnesHut+omp\"\n"
                      "\t\t\t ----";
@@ -200,6 +202,8 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodySIMD(NBodies, BodiesScheme, Softening);
     } else if (ImplTag == "cpu+omp") {
         simu = new SimulationNBodyOMP(NBodies, BodiesScheme, Softening);
+    } else if (ImplTag == "cpu+simd+omp") {
+        simu = new SimulationNBodySIMD_OMP(NBodies, BodiesScheme, Softening);
     } else if (ImplTag == "cpu+barnesHut") {
         simu = new SimulationNBodyBarnesHut(NBodies, BodiesScheme, Softening);
     } else if (ImplTag == "cpu+barnesHut+omp") {
