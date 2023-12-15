@@ -24,6 +24,7 @@
 #include "implem/SimulationNBodyOMP.hpp"
 #include "implem/SimulationNBodyBarnesHut.hpp"
 #include "implem/SimulationNBodyBarnesHutOMP.hpp"
+#include "implem/SimulationNBodyOpenCL.hpp"
 
 
 /* global variables */
@@ -86,6 +87,7 @@ void argsReader(int argc, char **argv)
                      "\t\t\t - \"cpu+simd\"\n"
                      "\t\t\t - \"cpu+barnesHut\"\n"
                      "\t\t\t - \"cpu+barnesHut+omp\"\n"
+                     "\t\t\t - \"gpu\"\n"
                      "\t\t\t ----";
     faculArgs["-soft"] = "softeningFactor";
     docArgs["-soft"] = "softening factor.";
@@ -191,6 +193,7 @@ std::string strDate(float timestamp)
  */
 SimulationNBodyInterface *createImplem()
 {
+    std::cout << ImplTag << std::endl;
     SimulationNBodyInterface *simu = nullptr;
     if (ImplTag == "cpu+naive") {
         simu = new SimulationNBodyNaive(NBodies, BodiesScheme, Softening);
@@ -204,6 +207,9 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodyBarnesHut(NBodies, BodiesScheme, Softening);
     } else if (ImplTag == "cpu+barnesHut+omp") {
         simu = new SimulationNBodyBarnesHutOMP(NBodies, BodiesScheme, Softening);
+    }  else if (ImplTag == "gpu") {
+        simu = new SimulationNBodyOpenCL(NBodies, BodiesScheme, Softening);
+        std::cout << "??????" << std::endl;
     } else {
         std::cout << "Implementation '" << ImplTag << "' does not exist... Exiting." << std::endl;
         exit(-1);
