@@ -12,6 +12,9 @@ __kernel void computeBodiesAcceleration(
 )
 {
     unsigned long i = get_global_id(0);
+    if (i > n)
+        return;
+
     for (unsigned long j = 0; j < n; j++) {
         const float rijx = in_qx[j] - in_qx[i];
         const float rijy = in_qy[j] - in_qy[i];
@@ -28,7 +31,6 @@ __kernel void computeBodiesAcceleration(
         out_ay[i] += ai * rijy;
         out_az[i] += ai * rijz;
 
-                barrier(CLK_GLOBAL_MEM_FENCE);
-
+        barrier(CLK_GLOBAL_MEM_FENCE);
     }
 }

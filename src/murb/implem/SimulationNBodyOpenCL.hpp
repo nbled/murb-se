@@ -23,7 +23,8 @@ class SimulationNBodyOpenCL : public SimulationNBodyInterface {
     cl_mem out_buf_ax;
     cl_mem out_buf_ay;
     cl_mem out_buf_az;
-
+    unsigned long boundary;
+    
   public:
     SimulationNBodyOpenCL(const unsigned long nBodies, const std::string &scheme = "galaxy", const float soft = 0.035f,
                          const unsigned long randInit = 0);

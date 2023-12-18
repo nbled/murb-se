@@ -18,6 +18,11 @@ SimulationNBodyOpenCL::SimulationNBodyOpenCL(const unsigned long nBodies, const 
     this->accelerations.ay.resize(this->getBodies().getN());
     this->accelerations.az.resize(this->getBodies().getN());
 
+    unsigned n_bodies = this->bodies.getN();
+    this->boundary = n_bodies;
+    if (this->boundary % 512 != 0)
+        this->boundary = (n_bodies / 512) * 512 + 512;
+
     cl_uint num_platforms = 0;
     cl_int err = CL_SUCCESS;
 
@@ -75,7 +80,7 @@ SimulationNBodyOpenCL::SimulationNBodyOpenCL(const unsigned long nBodies, const 
 
     /* Create & build the program */
     const char *c_source = source.c_str();
-    printf("%s\n", c_source);
+    //printf("%s\n", c_source);
     const size_t lengths[] = { source.size() };
 
     cl_program program = clCreateProgramWithSource(this->context, 1, &c_source, lengths, &err);
@@ -102,10 +107,9 @@ SimulationNBodyOpenCL::SimulationNBodyOpenCL(const unsigned long nBodies, const 
         exit(EXIT_FAILURE); 
     }
 
-    std::cout << "kernel built !" << std::endl;
+    // std::cout << "kernel built !" << std::endl;
 
-    const dataSoA_t<cl_float> &d = this->getBodies().getDataSoA();
-
+    const dataSoA_t<float> &d = this->getBodies().getDataSoA();
 
     this->in_buf_qx = clCreateBuffer(this->context, 
         CL_MEM_READ_ONLY , d.qx.size() * sizeof(d.qx[0]), NULL, &err);
@@ -126,8 +130,7 @@ SimulationNBodyOpenCL::SimulationNBodyOpenCL(const unsigned long nBodies, const 
         CL_MEM_READ_WRITE , this->accelerations.az.size() * sizeof(this->accelerations.az[0]), 
          NULL, &err);
 
-    std::cout << "kernel buffer created !" << std::endl;
-
+    //std::cout << "kernel buffer created !" << std::endl;
 }
 
 void SimulationNBodyOpenCL::initIteration()
@@ -142,9 +145,9 @@ void SimulationNBodyOpenCL::initIteration()
 
 void SimulationNBodyOpenCL::computeBodiesAcceleration()
 {
-    const dataSoA_t<cl_float> &d = this->getBodies().getDataSoA();
-    const cl_float softSquared = this->soft * this->soft; // 1 flops
-    cl_ulong n_bodies = this->getBodies().getN();
+    const dataSoA_t<float> &d = this->getBodies().getDataSoA();
+    const float softSquared = this->soft * this->soft; // 1 flops
+    unsigned long n_bodies = this->getBodies().getN();
 
     /* CL_MEM_USE_HOST_PTR vs CL_MEM_COPY_HOST_PTR ? */
     /* if we use USE_HOST_PTR can we init only once ? */
@@ -183,8 +186,8 @@ void SimulationNBodyOpenCL::computeBodiesAcceleration()
     clSetKernelArg(this->kernel, 9, sizeof(cl_float), &this->G);
 
     /* Enqueue kernel */
-    const size_t global = n_bodies;
-    const size_t local = 8;
+    const size_t global = this->boundary;
+    const size_t local = 512; /* n_bodies doit etre un multiple de local ??? */
 
     clEnqueueNDRangeKernel(this->cmd_queue, this->kernel, 1, NULL, &global, &local, 0, NULL, NULL);
     
@@ -195,10 +198,10 @@ void SimulationNBodyOpenCL::computeBodiesAcceleration()
     clEnqueueReadBuffer(this->cmd_queue, out_buf_az, CL_TRUE, 0, this->accelerations.az.size() * sizeof(this->accelerations.az[0]), (void*) &this->accelerations.az[0],
         0, NULL, NULL);
 
-    for (unsigned i = 0; i < n_bodies; i++) {
+    /*for (unsigned i = 0; i < n_bodies; i++) {
         printf("%e ", this->accelerations.ax[i]);
     }
-    printf("\n");
+    printf("\n");*/
 
     clFinish(cmd_queue);
 }

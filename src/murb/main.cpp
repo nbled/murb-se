@@ -212,7 +212,7 @@ SimulationNBodyInterface *createImplem()
     } else if (ImplTag == "cpu+barnesHut+omp") {
         simu = new SimulationNBodyBarnesHutOMP(NBodies, BodiesScheme, Softening);
     }  else if (ImplTag == "gpu") {
-        simu = new SimulationNBodyOpenCL(NBodies, BodiesScheme, Softening);
+        simu = new SimulationNBodyOpenCL(NBodies, BodiesScheme, Softening,512);
         std::cout << "??????" << std::endl;
     } else {
         std::cout << "Implementation '" << ImplTag << "' does not exist... Exiting." << std::endl;
