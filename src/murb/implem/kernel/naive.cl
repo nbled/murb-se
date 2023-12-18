@@ -21,11 +21,14 @@ __kernel void computeBodiesAcceleration(
         const float rij_squared = rijx * rijx + rijy * rijy + rijz * rijz;
 
         // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
-        const float ai = (g * in_m[j] / (rij_squared + soft_squared)) * rsqrt(rij_squared + soft_squared); // 5 flops
+        const float ai = g * in_m[j] / ((rij_squared + soft_squared) * sqrt(rij_squared + soft_squared)); // 5 flops
 
         // add the acceleration value into the acceleration vector: ai += || ai ||.rij
         out_ax[i] += ai * rijx;
         out_ay[i] += ai * rijy;
         out_az[i] += ai * rijz;
+
+                barrier(CLK_GLOBAL_MEM_FENCE);
+
     }
 }

@@ -94,7 +94,7 @@ template <typename T> void Bodies<T>::initGalaxy(const unsigned long randInit)
 
         if (iBody == 0) {
             mi = 2.0e24;
-            ri = 1.0e6;
+            ri = 4.0e6;
             qix = 0.0;
             qiy = 0.0;
             qiz = 0.0;

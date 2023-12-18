@@ -29,3 +29,6 @@ simd first version (naive)
 
 simd small improvement
 (miguel) 6130.68 FPS, 163.114 ms (on x86_64)
+
+
+changing layout:  SoA => AoS

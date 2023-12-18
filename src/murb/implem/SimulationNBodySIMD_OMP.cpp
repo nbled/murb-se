@@ -18,6 +18,8 @@ SimulationNBodySIMD_OMP::SimulationNBodySIMD_OMP(const unsigned long nBodies, co
     this->accelerations.ay.resize(this->getBodies().getN() + this->getBodies().getPadding());
     this->accelerations.az.resize(this->getBodies().getN() + this->getBodies().getPadding());
 
+    std::cout << "hello ???????" << std::endl;
+
 }
 
 void SimulationNBodySIMD_OMP::initIteration()

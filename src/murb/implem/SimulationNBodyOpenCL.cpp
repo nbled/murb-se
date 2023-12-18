@@ -17,7 +17,6 @@ SimulationNBodyOpenCL::SimulationNBodyOpenCL(const unsigned long nBodies, const 
     this->accelerations.ax.resize(this->getBodies().getN());
     this->accelerations.ay.resize(this->getBodies().getN());
     this->accelerations.az.resize(this->getBodies().getN());
-    std::cout << "hello??? !" << std::endl;
 
     cl_uint num_platforms = 0;
     cl_int err = CL_SUCCESS;
@@ -37,14 +36,14 @@ SimulationNBodyOpenCL::SimulationNBodyOpenCL(const unsigned long nBodies, const 
 
     /* Fetch number of devices assiociated with a platform (device = hardware linked to the opencl implem) */
     cl_uint num_devices;
-    if ((err = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices)) != CL_SUCCESS) {
+    if ((err = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices)) != CL_SUCCESS) {
         std::cerr << "clGetDeviceIDs failed; error = " << err << std::endl;
         exit(EXIT_FAILURE); 
     }
 
     /* Fetch the devices */
     cl_device_id *devices = new cl_device_id [num_devices] ();
-    if ((err = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_ALL, num_devices, devices, NULL)) != CL_SUCCESS) {
+    if ((err = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_GPU, num_devices, devices, NULL)) != CL_SUCCESS) {
         std::cerr << "clGetDeviceIDs failed; error = " << err << std::endl;
         exit(EXIT_FAILURE); 
     }
@@ -70,12 +69,16 @@ SimulationNBodyOpenCL::SimulationNBodyOpenCL(const unsigned long nBodies, const 
         std::cerr << "opening 'kernel/naive.cl' failed" << std::endl;
         exit(EXIT_FAILURE);
     }
-    std::stringstream source;
-    source << source_file.rdbuf();
+    std::stringstream source_stream;
+    source_stream << source_file.rdbuf();
+    std::string source = source_stream.str();
 
     /* Create & build the program */
-    const char *c_source = source.str().c_str();
-    cl_program program = clCreateProgramWithSource(this->context, 1, &c_source, NULL, &err);
+    const char *c_source = source.c_str();
+    printf("%s\n", c_source);
+    const size_t lengths[] = { source.size() };
+
+    cl_program program = clCreateProgramWithSource(this->context, 1, &c_source, lengths, &err);
     if (err != CL_SUCCESS) {
         std::cerr << "clCreateProgramWithSource failed; error = " << err << std::endl;
         exit(EXIT_FAILURE); 
@@ -100,6 +103,31 @@ SimulationNBodyOpenCL::SimulationNBodyOpenCL(const unsigned long nBodies, const 
     }
 
     std::cout << "kernel built !" << std::endl;
+
+    const dataSoA_t<cl_float> &d = this->getBodies().getDataSoA();
+
+
+    this->in_buf_qx = clCreateBuffer(this->context, 
+        CL_MEM_READ_ONLY , d.qx.size() * sizeof(d.qx[0]), NULL, &err);
+    this->in_buf_qy = clCreateBuffer(this->context,
+        CL_MEM_READ_ONLY , d.qy.size() * sizeof(d.qy[0]), NULL, &err);
+    this->in_buf_qz = clCreateBuffer(this->context, 
+        CL_MEM_READ_ONLY , d.qz.size() * sizeof(d.qz[0]), NULL, &err);
+    this->in_buf_m = clCreateBuffer(this->context, 
+        CL_MEM_READ_ONLY , d.m.size() * sizeof(d.m[0]), NULL, &err);
+
+    this->out_buf_ax = clCreateBuffer(this->context,
+        CL_MEM_READ_WRITE , this->accelerations.ax.size() * sizeof(this->accelerations.ax[0]), 
+         NULL, &err);
+    this->out_buf_ay = clCreateBuffer(this->context,
+        CL_MEM_READ_WRITE , this->accelerations.ay.size() * sizeof(this->accelerations.ay[0]), 
+        NULL, &err);
+    this->out_buf_az = clCreateBuffer(this->context,
+        CL_MEM_READ_WRITE , this->accelerations.az.size() * sizeof(this->accelerations.az[0]), 
+         NULL, &err);
+
+    std::cout << "kernel buffer created !" << std::endl;
+
 }
 
 void SimulationNBodyOpenCL::initIteration()
@@ -121,26 +149,28 @@ void SimulationNBodyOpenCL::computeBodiesAcceleration()
     /* CL_MEM_USE_HOST_PTR vs CL_MEM_COPY_HOST_PTR ? */
     /* if we use USE_HOST_PTR can we init only once ? */
     cl_int err = CL_SUCCESS;
-    cl_mem in_buf_qx = clCreateBuffer(this->context, 
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, d.qx.size() * sizeof(d.qx[0]), (void*) &d.qx[0], &err);
-    cl_mem in_buf_qy = clCreateBuffer(this->context, 
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, d.qy.size() * sizeof(d.qy[0]), (void*) &d.qy[0], &err);
-    cl_mem in_buf_qz = clCreateBuffer(this->context, 
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, d.qz.size() * sizeof(d.qz[0]), (void*) &d.qz[0], &err);
-    cl_mem in_buf_m = clCreateBuffer(this->context, 
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, d.m.size() * sizeof(d.m[0]), (void*) &d.qz[0], &err);
 
-    cl_mem out_buf_ax = clCreateBuffer(this->context,
-        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, this->accelerations.ax.size() * sizeof(this->accelerations.ax[0]), 
-         &this->accelerations.ax[0], &err);
-    cl_mem out_buf_ay = clCreateBuffer(this->context,
-        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, this->accelerations.ay.size() * sizeof(this->accelerations.ay[0]), 
-         &this->accelerations.ay[0], &err);    
-    cl_mem out_buf_az = clCreateBuffer(this->context,
-        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, this->accelerations.az.size() * sizeof(this->accelerations.az[0]), 
-         &this->accelerations.az[0], &err);
+    err = clEnqueueWriteBuffer(this->cmd_queue, in_buf_qx,
+        CL_TRUE, 0,  d.qx.size() * sizeof(d.qx[0]), (void*) &d.qx[0],0,NULL,NULL);
+    err = clEnqueueWriteBuffer(this->cmd_queue,in_buf_qy,
+        CL_TRUE, 0,  d.qy.size() * sizeof(d.qy[0]), (void*) &d.qy[0],0,NULL,NULL);
+    err = clEnqueueWriteBuffer(this->cmd_queue, in_buf_qz,
+        CL_TRUE, 0,  d.qz.size() * sizeof(d.qz[0]), (void*) &d.qz[0],0,NULL,NULL);
+    err = clEnqueueWriteBuffer(this->cmd_queue, in_buf_m,
+        CL_TRUE, 0,  d.m.size() * sizeof(d.m[0]), (void*) &d.m[0],0,NULL,NULL);
+
+    err = clEnqueueWriteBuffer(this->cmd_queue, out_buf_ax,
+        CL_TRUE,0, this->accelerations.ax.size() * sizeof(this->accelerations.ax[0]), 
+         (void*) &this->accelerations.ax[0], 0,NULL,NULL);
+    err = clEnqueueWriteBuffer(this->cmd_queue, out_buf_ay,
+        CL_TRUE,0, this->accelerations.ay.size() * sizeof(this->accelerations.ay[0]), 
+         (void*) &this->accelerations.ay[0], 0,NULL,NULL);    
+    err = clEnqueueWriteBuffer(this->cmd_queue, out_buf_az,
+        CL_TRUE,0, this->accelerations.az.size() * sizeof(this->accelerations.az[0]), 
+         (void*) &this->accelerations.az[0], 0,NULL,NULL);
 
     /* Setup the kernel */
+    unsigned t = 0;
     clSetKernelArg(this->kernel, 0, sizeof(cl_mem), &in_buf_qx);
     clSetKernelArg(this->kernel, 1, sizeof(cl_mem), &in_buf_qy);
     clSetKernelArg(this->kernel, 2, sizeof(cl_mem), &in_buf_qz);
@@ -153,9 +183,23 @@ void SimulationNBodyOpenCL::computeBodiesAcceleration()
     clSetKernelArg(this->kernel, 9, sizeof(cl_float), &this->G);
 
     /* Enqueue kernel */
-    size_t global[1] = {n_bodies};
-    size_t local[1] = {n_bodies};
-    clEnqueueNDRangeKernel(this->cmd_queue, this->kernel, 1, NULL, global, NULL, 0, NULL, NULL);
+    const size_t global = n_bodies;
+    const size_t local = 8;
+
+    clEnqueueNDRangeKernel(this->cmd_queue, this->kernel, 1, NULL, &global, &local, 0, NULL, NULL);
+    
+    clEnqueueReadBuffer(this->cmd_queue, out_buf_ax, CL_TRUE, 0, this->accelerations.ax.size() * sizeof(this->accelerations.ax[0]), (void*) &this->accelerations.ax[0],
+        0, NULL, NULL);
+    clEnqueueReadBuffer(this->cmd_queue, out_buf_ay, CL_TRUE, 0, this->accelerations.ay.size() * sizeof(this->accelerations.ay[0]), (void*) &this->accelerations.ay[0],
+        0, NULL, NULL);
+    clEnqueueReadBuffer(this->cmd_queue, out_buf_az, CL_TRUE, 0, this->accelerations.az.size() * sizeof(this->accelerations.az[0]), (void*) &this->accelerations.az[0],
+        0, NULL, NULL);
+
+    for (unsigned i = 0; i < n_bodies; i++) {
+        printf("%e ", this->accelerations.ax[i]);
+    }
+    printf("\n");
+
     clFinish(cmd_queue);
 }
 
