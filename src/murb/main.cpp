@@ -96,7 +96,7 @@ void argsReader(int argc, char **argv)
     docArgs["-wg"] = "the size of the OpenCL local workgroup (default is " + std::to_string(LocalWGSize) + ").";
 #endif
     faculArgs["s"] = "bodies scheme";
-    docArgs["s"] = "bodies scheme (initial conditions can be \"galaxy\" or \"random\").";
+    docArgs["s"] = "bodies scheme (initial conditions can be \"galaxy\" or \"galaxy2\" or \"random\").";
     faculArgs["-gf"] = "";
     docArgs["-gf"] = "display the number of GFlop/s.";
 
