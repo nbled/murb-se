@@ -166,6 +166,22 @@ template <typename T> class Bodies {
     void initGalaxy(const unsigned long randInit = 0);
 
     /*!
+     *  \brief Initialized bodies like in two Galaxy with random.
+     *
+     *  \param randInit : Initialization number for random generation.
+     */
+    void initTwoGalaxy(const unsigned long randInit = 0);
+
+
+    /*!
+     *  \brief Initialized bodies like in a Galaxy with random.
+     *
+     *  \param randInit : Initialization number for random generation.
+     */
+    void initGalaxyMod(const unsigned long randInit = 0);
+
+
+    /*!
      *  \brief Initialized bodies randomly.
      *
      *  \param randInit : Initialization number for random generation.

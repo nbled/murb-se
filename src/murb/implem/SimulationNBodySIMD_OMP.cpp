@@ -7,9 +7,9 @@
 
 #include "mipp.h"
 
-#include "SimulationNBodySIMD.hpp"
+#include "SimulationNBodySIMD_OMP.hpp"
 
-SimulationNBodySIMD::SimulationNBodySIMD(const unsigned long nBodies, const std::string &scheme, const float soft,
+SimulationNBodySIMD_OMP::SimulationNBodySIMD_OMP(const unsigned long nBodies, const std::string &scheme, const float soft,
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
@@ -20,27 +20,15 @@ SimulationNBodySIMD::SimulationNBodySIMD(const unsigned long nBodies, const std:
 
 }
 
-void SimulationNBodySIMD::initIteration()
+void SimulationNBodySIMD_OMP::initIteration()
 {
     std::fill(this->accelerations.ax.begin(),this->accelerations.ax.end(),0);
     std::fill(this->accelerations.ay.begin(),this->accelerations.ay.end(),0);
     std::fill(this->accelerations.az.begin(),this->accelerations.az.end(),0);
 }
 
-void print_mipp_reg(mipp::Reg<float> reg) {
-    constexpr int N = mipp::N<float>();
-    float debug[N];
-    reg.store(debug);
-    printf("{");
-    for (int i=0;i<N;i++) {
-        printf("%f, ",debug[i]);
-    }
-    printf("\b}\n");
-}
-
-
 //Second version
-void SimulationNBodySIMD::computeBodiesAcceleration()
+void SimulationNBodySIMD_OMP::computeBodiesAcceleration()
 {
     const dataSoA_t<float> &d = this->getBodies().getDataSoA();
     // compute e²
@@ -50,6 +38,10 @@ void SimulationNBodySIMD::computeBodiesAcceleration()
 
     // flops = n² * 20
     unsigned long iBody;
+    #pragma omp parallel \
+            firstprivate(softSquared,n_bodies,N)
+    {
+    #pragma omp for
     for (iBody = 0; iBody < n_bodies; iBody+=N) {
         unsigned long jBody;
         mipp::Reg<float> i_qx = &d.qx[iBody];
@@ -110,12 +102,13 @@ void SimulationNBodySIMD::computeBodiesAcceleration()
         az.store(&this->accelerations.az[iBody]);
 
     }
+    }
 }
 
 
 /*
 //First version
-void SimulationNBodySIMD::computeBodiesAcceleration()
+void SimulationNBodySIMD_OMP::computeBodiesAcceleration()
 {
     const dataSoA_t<float> &d = this->getBodies().getDataSoA();
 
@@ -202,7 +195,7 @@ void SimulationNBodySIMD::computeBodiesAcceleration()
 }
 */
 
-void SimulationNBodySIMD::computeOneIteration()
+void SimulationNBodySIMD_OMP::computeOneIteration()
 {
     this->initIteration();
     this->computeBodiesAcceleration();
