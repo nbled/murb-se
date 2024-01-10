@@ -6,13 +6,13 @@
 #include <random>
 #include <string>
 
-#include "SimulationNBodyNaive.hpp"
+#include "SimulationNBodyOptim.hpp"
 #include "SimulationNBodyBarnesHut.hpp"
 
 void test_nbody_barnes_hut(const size_t n, const float soft, const float dt, const size_t nIte, const std::string &scheme,
                      const float eps)
 {
-    SimulationNBodyNaive simuRef(n, scheme, soft);
+    SimulationNBodyOptim simuRef(n, scheme, soft);
     simuRef.setDt(dt);
 
     SimulationNBodyBarnesHut simuTest(n, scheme, soft);
