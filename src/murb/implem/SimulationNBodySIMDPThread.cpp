@@ -57,7 +57,10 @@ void* worker(void *arg)
 
 
     while (iBody_main < n_bodies) {
-        for (unsigned long iBody = iBody_main; iBody < iBody_main + N*BATCH_SIZE && iBody < n_bodies; iBody+=N) {
+        unsigned long iBody = iBody_main;
+#if BATCH_SIZE > 1 //This doesn't seem to impact much performance, but since it's hard to measure, it can't hurt (the compiler doesn't do it itself)
+        for (iBody = iBody_main; iBody < iBody_main + N*BATCH_SIZE && iBody < n_bodies; iBody+=N) {
+#endif
             // printf("thread %d : calculating %ld\n",pthread_self(),iBody);
             unsigned long jBody;
             mipp::Reg<float> i_qx = &d.qx[iBody];
@@ -108,7 +111,9 @@ void* worker(void *arg)
             ax.store(&arg_s->that->accelerations.ax[iBody]);
             ay.store(&arg_s->that->accelerations.ay[iBody]);
             az.store(&arg_s->that->accelerations.az[iBody]);
+#if BATCH_SIZE > 1            
         }
+#endif
         iBody_main = arg_s->current->fetch_add(N*BATCH_SIZE);
         // printf("thread %d got %ld\n", pthread_self(),iBody_main);
     }
