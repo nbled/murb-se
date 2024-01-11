@@ -26,6 +26,7 @@
 #include "implem/SimulationNBodyBarnesHut.hpp"
 #include "implem/SimulationNBodyBarnesHutOMP.hpp"
 #include "implem/SimulationNBodyOpenCL.hpp"
+//#include "implem/SimulationNBodyHetero.hpp"
 
 
 /* global variables */
@@ -213,7 +214,8 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodyBarnesHutOMP(NBodies, BodiesScheme, Softening);
     }  else if (ImplTag == "gpu") {
         simu = new SimulationNBodyOpenCL(NBodies, BodiesScheme, Softening,512);
-        std::cout << "??????" << std::endl;
+    //} else if (ImplTag == "hetero") {
+    //    simu = new SimulationNBodyHetero(NBodies, BodiesScheme, Softening,512);
     } else {
         std::cout << "Implementation '" << ImplTag << "' does not exist... Exiting." << std::endl;
         exit(-1);

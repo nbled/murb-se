@@ -6,9 +6,10 @@
 #include <limits>
 #include <string>
 
-#include "SimulationNBodyOpenCL.hpp"
+#include "SimulationNBodyHetero.hpp"
+#include "SimulationNBodySIMD.hpp"
 
-SimulationNBodyOpenCL::SimulationNBodyOpenCL(const unsigned long nBodies, const std::string &scheme, const float soft,
+SimulationNBodyHetero::SimulationNBodyHetero(const unsigned long nBodies, const std::string &scheme, const float soft,
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
@@ -130,12 +131,10 @@ SimulationNBodyOpenCL::SimulationNBodyOpenCL(const unsigned long nBodies, const 
         CL_MEM_WRITE_ONLY , this->accelerations.az.size() * sizeof(this->accelerations.az[0]), 
          NULL, &err);
 
-    err = clEnqueueWriteBuffer(this->cmd_queue, in_buf_m,
-        CL_TRUE, 0,  d.m.size() * sizeof(d.m[0]), (void*) &d.m[0],0,NULL,NULL);
     //std::cout << "kernel buffer created !" << std::endl;
 }
 
-void SimulationNBodyOpenCL::initIteration()
+void SimulationNBodyHetero::initIteration()
 {
     unsigned long nBodies = this->getBodies().getN();
     for (unsigned long iBody = 0; iBody < nBodies; iBody++) {
@@ -145,32 +144,114 @@ void SimulationNBodyOpenCL::initIteration()
     }
 }
 
-void SimulationNBodyOpenCL::computeBodiesAcceleration()
+void SimulationNBodyHetero::computeBodiesAccelerationSIMD(unsigned long start, unsigned long end)
+{
+    const dataSoA_t<float> &d = this->getBodies().getDataSoA();
+    // compute e²
+    const float softSquared = std::pow(this->soft, 2); // 1 flops
+    //unsigned long n_bodies = this->getBodies().getN();
+    constexpr int N = mipp::N<float>();
+
+    // flops = n² * 20
+    unsigned long iBody;
+    #pragma omp parallel \
+            firstprivate(softSquared,n_bodies,N)
+    {
+    #pragma omp for schedule(guided,1)
+    for (iBody = start; iBody < end; iBody+=N) {
+        unsigned long jBody;
+        mipp::Reg<float> i_qx = &d.qx[iBody];
+        mipp::Reg<float> i_qy = &d.qy[iBody];
+        mipp::Reg<float> i_qz = &d.qz[iBody];
+        //mipp::Reg<float> i_m = &d.m[iBody];
+
+
+        mipp::Reg<float> softSquared_v = softSquared;
+        mipp::Reg<float> G_v = this->G;
+
+        mipp::Reg<float> ax = 0.0;
+        mipp::Reg<float> ay = 0.0;
+        mipp::Reg<float> az = 0.0;
+
+        for (jBody = 0; jBody < n_bodies; jBody += 1) {
+            mipp::Reg<float> j_qx = d.qx[jBody]; //We duplicate : the same j for multiple i.
+            mipp::Reg<float> rijx = j_qx - i_qx;
+
+            mipp::Reg<float> j_qy = d.qy[jBody];
+            mipp::Reg<float> rijy = j_qy - i_qy;
+
+            mipp::Reg<float> j_qz = d.qz[jBody];
+            mipp::Reg<float> rijz = j_qz - i_qz;
+
+            mipp::Reg<float> rijSquared = rijx * rijx + rijy * rijy + rijz * rijz;
+            // mipp::Reg<float> rijSquared = rijx * rijx;  //fma doesn't seem to add to perf
+            // rijSquared = mipp::fmadd(rijy,rijy,rijSquared);
+            // rijSquared = mipp::fmadd(rijz,rijz,rijSquared);
+
+
+
+            mipp::Reg<float> x = G_v / ((rijSquared + softSquared_v) * mipp::sqrt(rijSquared + softSquared_v));
+            mipp::Reg<float> j_m = d.m[jBody];
+            mipp::Reg<float> ai = x * j_m; // 1 flops
+
+
+            mipp::Reg<float> i_ax = ai * rijx;
+            ax += i_ax;
+            mipp::Reg<float> i_ay = ai * rijy;
+            ay += i_ay;
+            mipp::Reg<float> i_az = ai * rijz;
+            az += i_az;
+
+
+            // mipp::Reg<float> aj = x * i_m; // 1 flops
+
+
+            // mipp::Reg<float> j_ax = aj * rijx;
+            // mipp::Reg<float> j_ay = aj * rijy;
+            // mipp::Reg<float> j_az = aj * rijz;
+
+        }
+        
+
+        ax.store(&this->accelerations.ax[iBody]);
+        ay.store(&this->accelerations.ay[iBody]);
+        az.store(&this->accelerations.az[iBody]);
+
+    }
+    }
+}
+
+
+void SimulationNBodyHetero::computeBodiesAcceleration()
 {
     const dataSoA_t<float> &d = this->getBodies().getDataSoA();
     const float softSquared = this->soft * this->soft; // 1 flops
     unsigned long n_bodies = this->getBodies().getN();
+
+    const float proportion = 0.2;
+    unsigned long n_bodies_gpu = (unsigned long) (n_bodies * (1-proportion));
 
     /* CL_MEM_USE_HOST_PTR vs CL_MEM_COPY_HOST_PTR ? */
     /* if we use USE_HOST_PTR can we init only once ? */
     cl_int err = CL_SUCCESS;
 
     err = clEnqueueWriteBuffer(this->cmd_queue, in_buf_qx,
-        CL_TRUE, 0,  n_bodies * sizeof(d.qx[0]), (void*) &d.qx[0],0,NULL,NULL);
+        CL_TRUE, 0,  d.qx.size() * sizeof(d.qx[0]), (void*) &d.qx[0],0,NULL,NULL);
     err = clEnqueueWriteBuffer(this->cmd_queue,in_buf_qy,
-        CL_TRUE, 0,  n_bodies * sizeof(d.qy[0]), (void*) &d.qy[0],0,NULL,NULL);
+        CL_TRUE, 0,  d.qy.size() * sizeof(d.qy[0]), (void*) &d.qy[0],0,NULL,NULL);
     err = clEnqueueWriteBuffer(this->cmd_queue, in_buf_qz,
-        CL_TRUE, 0,  n_bodies * sizeof(d.qz[0]), (void*) &d.qz[0],0,NULL,NULL);
-
+        CL_TRUE, 0,  d.qz.size() * sizeof(d.qz[0]), (void*) &d.qz[0],0,NULL,NULL);
+    err = clEnqueueWriteBuffer(this->cmd_queue, in_buf_m,
+        CL_TRUE, 0,  d.m.size() * sizeof(d.m[0]), (void*) &d.m[0],0,NULL,NULL);
 
     err = clEnqueueWriteBuffer(this->cmd_queue, out_buf_ax,
-        CL_TRUE,0, n_bodies * sizeof(this->accelerations.ax[0]), 
+        CL_TRUE,0, this->accelerations.ax.size() * sizeof(this->accelerations.ax[0]), 
          (void*) &this->accelerations.ax[0], 0,NULL,NULL);
     err = clEnqueueWriteBuffer(this->cmd_queue, out_buf_ay,
-        CL_TRUE,0, n_bodies * sizeof(this->accelerations.ay[0]), 
+        CL_TRUE,0, this->accelerations.ay.size() * sizeof(this->accelerations.ay[0]), 
          (void*) &this->accelerations.ay[0], 0,NULL,NULL);    
     err = clEnqueueWriteBuffer(this->cmd_queue, out_buf_az,
-        CL_TRUE,0, n_bodies * sizeof(this->accelerations.az[0]), 
+        CL_TRUE,0, this->accelerations.az.size() * sizeof(this->accelerations.az[0]), 
          (void*) &this->accelerations.az[0], 0,NULL,NULL);
 
     /* Setup the kernel */
@@ -192,11 +273,11 @@ void SimulationNBodyOpenCL::computeBodiesAcceleration()
 
     clEnqueueNDRangeKernel(this->cmd_queue, this->kernel, 1, NULL, &global, &local, 0, NULL, NULL);
     
-    clEnqueueReadBuffer(this->cmd_queue, out_buf_ax, CL_TRUE, 0, n_bodies * sizeof(this->accelerations.ax[0]), (void*) &this->accelerations.ax[0],
+    clEnqueueReadBuffer(this->cmd_queue, out_buf_ax, CL_TRUE, 0, this->accelerations.ax.size() * sizeof(this->accelerations.ax[0]), (void*) &this->accelerations.ax[0],
         0, NULL, NULL);
-    clEnqueueReadBuffer(this->cmd_queue, out_buf_ay, CL_TRUE, 0, n_bodies * sizeof(this->accelerations.ay[0]), (void*) &this->accelerations.ay[0],
+    clEnqueueReadBuffer(this->cmd_queue, out_buf_ay, CL_TRUE, 0, this->accelerations.ay.size() * sizeof(this->accelerations.ay[0]), (void*) &this->accelerations.ay[0],
         0, NULL, NULL);
-    clEnqueueReadBuffer(this->cmd_queue, out_buf_az, CL_TRUE, 0, n_bodies * sizeof(this->accelerations.az[0]), (void*) &this->accelerations.az[0],
+    clEnqueueReadBuffer(this->cmd_queue, out_buf_az, CL_TRUE, 0, this->accelerations.az.size() * sizeof(this->accelerations.az[0]), (void*) &this->accelerations.az[0],
         0, NULL, NULL);
 
     /*for (unsigned i = 0; i < n_bodies; i++) {
@@ -207,7 +288,7 @@ void SimulationNBodyOpenCL::computeBodiesAcceleration()
     clFinish(cmd_queue);
 }
 
-void SimulationNBodyOpenCL::computeOneIteration()
+void SimulationNBodyHetero::computeOneIteration()
 {
     this->initIteration();
     this->computeBodiesAcceleration();

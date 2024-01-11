@@ -82,9 +82,14 @@ void SimulationNBodySIMD::computeBodiesAcceleration()
 
 
 
-            mipp::Reg<float> x = G_v / ((rijSquared + softSquared_v) * mipp::sqrt(rijSquared + softSquared_v));
+            //mipp::Reg<float> inv = mipp::rsqrt(rijSquared + softSquared_v);
+            //mipp::Reg<float> x = G_v * inv * inv * inv;
+            //Not precise enough
+
+
             mipp::Reg<float> j_m = d.m[jBody];
-            mipp::Reg<float> ai = x * j_m; // 1 flops
+            mipp::Reg<float> ai = j_m / ((rijSquared + softSquared_v) * mipp::sqrt(rijSquared + softSquared_v));
+            //mipp::Reg<float> ai = x * j_m; // 1 flops
 
 
             mipp::Reg<float> i_ax = ai * rijx;
@@ -104,6 +109,10 @@ void SimulationNBodySIMD::computeBodiesAcceleration()
 
         }
         
+        ax *= G_v;
+        ay *= G_v;
+        az *= G_v;
+
 
         ax.store(&this->accelerations.ax[iBody]);
         ay.store(&this->accelerations.ay[iBody]);

@@ -40,7 +40,7 @@ void SimulationNBodySIMD_OMP::computeBodiesAcceleration()
     #pragma omp parallel \
             firstprivate(softSquared,n_bodies,N)
     {
-    #pragma omp for
+    #pragma omp for schedule(guided,1)
     for (iBody = 0; iBody < n_bodies; iBody+=N) {
         unsigned long jBody;
         mipp::Reg<float> i_qx = &d.qx[iBody];
@@ -105,94 +105,6 @@ void SimulationNBodySIMD_OMP::computeBodiesAcceleration()
 }
 
 
-/*
-//First version
-void SimulationNBodySIMD_OMP::computeBodiesAcceleration()
-{
-    const dataSoA_t<float> &d = this->getBodies().getDataSoA();
-
-    // compute e²
-    const float softSquared = std::pow(this->soft, 2); // 1 flops
-    unsigned long n_bodies = this->getBodies().getN();
-    constexpr int N = mipp::N<float>();
-
-    // flops = n² * 20
-    for (unsigned long iBody = 0; iBody < n_bodies; iBody++) {
-        unsigned long jBody;
-        mipp::Reg<float> i_qx = d.qx[iBody]; //we duplicate for i, and take different values for j.
-        mipp::Reg<float> i_qy = d.qy[iBody];
-        mipp::Reg<float> i_qz = d.qz[iBody];
-        mipp::Reg<float> i_m = d.m[iBody];
-
-
-        mipp::Reg<float> softSquared_v = softSquared;
-        mipp::Reg<float> G_v = this->G;
-
-        float ax=0,ay=0,az=0;
-
-        for (jBody = 0; jBody < n_bodies; jBody += N) {
-        //for (jBody = iBody+1; jBody <= n_bodies - N; jBody += N) {
-            mipp::Reg<float> j_qx = &d.qx[jBody];
-            mipp::Reg<float> rijx = j_qx - i_qx;
-
-            mipp::Reg<float> j_qy = &d.qy[jBody];
-            mipp::Reg<float> rijy = j_qy - i_qy;
-
-            mipp::Reg<float> j_qz = &d.qz[jBody];
-            mipp::Reg<float> rijz = j_qz - i_qz;
-
-            mipp::Reg<float> rijSquared = rijx * rijx + rijy * rijy + rijz * rijz;
-            // mipp::Reg<float> rijSquared = rijx * rijx;  //fma doesn't seem to add to perf
-            // rijSquared = mipp::fmadd(rijy,rijy,rijSquared);
-            // rijSquared = mipp::fmadd(rijz,rijz,rijSquared);
-
-
-
-            mipp::Reg<float> x = G_v / ((rijSquared + softSquared_v) * mipp::sqrt(rijSquared + softSquared_v));
-            mipp::Reg<float> j_m = &d.m[jBody];
-            mipp::Reg<float> ai = x * j_m; // 1 flops
-
-
-            mipp::Reg<float> i_ax = ai * rijx;
-            ax += mipp::hadd(i_ax); //Sum all elements
-            mipp::Reg<float> i_ay = ai * rijy;
-            ay += mipp::hadd(i_ay);
-            mipp::Reg<float> i_az = ai * rijz;
-            az += mipp::hadd(i_az);
-
-
-            // mipp::Reg<float> aj = x * i_m; // 1 flops
-
-
-            // mipp::Reg<float> j_ax = aj * rijx;
-            // mipp::Reg<float> j_ay = aj * rijy;
-            // mipp::Reg<float> j_az = aj * rijz;
-
-            // float tabx[N];
-            // float taby[N];
-            // float tabz[N];
-
-            // j_ax.store(tabx);
-            // j_ay.store(taby);
-            // j_az.store(tabz);
-
-            // for (int i=0;i<N;i++) {
-            //     this->accelerations.ax[jBody+i] += tabx[i];
-            //     this->accelerations.ay[jBody+i] += taby[i];
-            //     this->accelerations.az[jBody+i] += tabz[i];
-            // }
-
-
-
-
-        }
-
-        this->accelerations.ax[iBody] = ax;
-        this->accelerations.ay[iBody] = ay;
-        this->accelerations.az[iBody] = az;
-    }
-}
-*/
 
 void SimulationNBodySIMD_OMP::computeOneIteration()
 {
