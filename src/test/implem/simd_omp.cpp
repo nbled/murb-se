@@ -6,13 +6,13 @@
 #include <random>
 #include <string>
 
-#include "SimulationNBodyNaive.hpp"
+#include "SimulationNBodyOptim.hpp"
 #include "SimulationNBodySIMD_OMP.hpp"
 
 void test_nbody_simd_omp(const size_t n, const float soft, const float dt, const size_t nIte, const std::string &scheme,
                      const float eps)
 {
-    SimulationNBodyNaive simuRef(n, scheme, soft);
+    SimulationNBodyOptim simuRef(n, scheme, soft);
     simuRef.setDt(dt);
 
     SimulationNBodySIMD_OMP simuTest(n, scheme, soft);

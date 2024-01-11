@@ -23,6 +23,7 @@
 #include "implem/SimulationNBodySIMD.hpp"
 #include "implem/SimulationNBodyOMP.hpp"
 #include "implem/SimulationNBodySIMD_OMP.hpp"
+#include "implem/SimulationNBodySIMDPThread.hpp"
 #include "implem/SimulationNBodyBarnesHut.hpp"
 #include "implem/SimulationNBodyBarnesHutOMP.hpp"
 #include "implem/SimulationNBodyOpenCL.hpp"
@@ -208,6 +209,8 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodyOMP(NBodies, BodiesScheme, Softening);
     } else if (ImplTag == "cpu+simd+omp") {
         simu = new SimulationNBodySIMD_OMP(NBodies, BodiesScheme, Softening);
+    } else if (ImplTag == "cpu+simd+pthread") {
+        simu = new SimulationNBodySIMDPThread(NBodies, BodiesScheme, Softening);
     } else if (ImplTag == "cpu+barnesHut") {
         simu = new SimulationNBodyBarnesHut(NBodies, BodiesScheme, Softening);
     } else if (ImplTag == "cpu+barnesHut+omp") {

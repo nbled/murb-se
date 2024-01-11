@@ -161,6 +161,7 @@ void SimulationNBodyBarnesHut::updateTree(Octree* tree) { //Could probably be fu
 }
 
 void SimulationNBodyBarnesHut::computeOctree() {
+    // clock_t begin = clock();
     float min_x,max_x,min_y,max_y,min_z,max_z;
     this->getBoundingBox(&min_x,&max_x,&min_y,&max_y,&min_z,&max_z);
 
@@ -195,8 +196,16 @@ void SimulationNBodyBarnesHut::computeOctree() {
         // printf("inserting body %e %e %e\n",d[i].qx,d[i].qy,d[i].qz);
         this->insertBody(this->tree,&d[i]);
     }
-
+    // clock_t end_1 = clock();
     this->updateTree(this->tree);
+    // clock_t end = clock();
+    // double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    // double time_spent_1 = (double)(end_1 - begin) / CLOCKS_PER_SEC;
+    // double time_spent_2 = (double)(end - end_1) / CLOCKS_PER_SEC;
+
+    // printf("boundingbox and insert : %f\n",time_spent_1);
+    // printf("updateTree : %f\n",time_spent_2);
+    // printf("compute Octree total: %f\n",time_spent);
 
 
 }
@@ -266,7 +275,13 @@ void SimulationNBodyBarnesHut::computeOneIteration()
 {
     // printf("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n");
     this->initIteration();
+    // clock_t begin = clock();
     this->computeBodiesAcceleration();
+    // clock_t end = clock();
+    // double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+
+    // printf("compute Accelerations : %f\n",time_spent);
+
     this->freeTree(this->tree);
     // time integration
     this->bodies.updatePositionsAndVelocities(this->accelerations, this->dt);

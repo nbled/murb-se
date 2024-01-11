@@ -40,7 +40,7 @@ void SimulationNBodySIMD_OMP::computeBodiesAcceleration()
     #pragma omp parallel \
             firstprivate(softSquared,n_bodies,N)
     {
-    #pragma omp for schedule(guided,1)
+    #pragma omp for schedule(guided)
     for (iBody = 0; iBody < n_bodies; iBody+=N) {
         unsigned long jBody;
         mipp::Reg<float> i_qx = &d.qx[iBody];
