@@ -37,8 +37,8 @@ __kernel void computeBodiesAcceleration(
         ay += ai * rijy;
         az += ai * rijz;
     }
+
     out_ax[i] += ax * g;
     out_ay[i] += ay * g;
     out_az[i] += az * g;
-
 }

@@ -1,0 +1,55 @@
+optim,nbodies,ms,fps
+cpu+optim,500,3514.92,284.502
+cpu+omp,500,2895.86,345.32
+cpu+simd,500,779.117,1283.5
+cpu+simd+omp,500,292.511,3418.68
+cpu+simd+pthread,500,415.482,2406.84
+cpu+barnesHut,500,17625.3,56.7365
+cpu+barnesHut+omp,500,3626.12,275.777
+cpu+optim,1000,13834.4,72.2838
+cpu+omp,1000,6279.64,159.245
+cpu+simd,1000,3084.13,324.24
+cpu+simd+omp,1000,1169.66,854.951
+cpu+simd+pthread,1000,1112.62,898.78
+cpu+barnesHut,1000,52741.5,18.9604
+cpu+barnesHut+omp,1000,11098.0,90.1066
+cpu+optim,2000,55525.4,18.0098
+cpu+omp,2000,34891.6,28.6602
+cpu+simd,2000,12315.0,81.2021
+cpu+simd+omp,2000,4431.82,225.641
+cpu+simd+pthread,2000,3533.47,283.008
+cpu+barnesHut,2000,150828.0,6.63006
+cpu+barnesHut+omp,2000,29548.2,33.843
+cpu+optim,3000,124673.0,8.021
+cpu+omp,3000,72075.4,13.8744
+cpu+simd,3000,27675.7,36.1328
+cpu+simd+omp,3000,9414.8,106.216
+cpu+simd+pthread,3000,7348.65,136.079
+cpu+barnesHut,3000,287675.0,3.47615
+cpu+barnesHut+omp,3000,55621.0,17.9788
+cpu+optim,4000,221781.0,4.50896
+cpu+omp,4000,120659.0,8.28785
+cpu+simd,4000,48734.1,20.5195
+cpu+simd+omp,4000,16381.1,61.046
+cpu+simd+pthread,4000,12850.9,77.8155
+cpu+barnesHut,4000,470161.0,2.12693
+cpu+barnesHut+omp,4000,84900.5,11.7785
+cpu+optim,5000,345870.0,2.89126
+cpu+omp,5000,186357.0,5.36605
+cpu+simd,5000,74700.0,13.3869
+cpu+simd+omp,5000,25094.2,39.8498
+cpu+simd+pthread,5000,19500.4,51.2811
+cpu+barnesHut,5000,594891.0,1.68098
+cpu+barnesHut+omp,5000,116047.0,8.6172
+gpu,500,12865.7,777.259
+gpu,1000,23727.0,421.46
+gpu,2000,36003.4,277.751
+gpu,3000,43044.6,232.317
+gpu,4000,48287.5,207.093
+gpu,5000,64176.3,155.821
+cpu+barnesHut (theta=1),500,259.978,384.648
+cpu+barnesHut (theta=1),1000,649.538,153.956
+cpu+barnesHut (theta=1),2000,1504.17,66.4818
+cpu+barnesHut (theta=1),3000,2636.44,37.93
+cpu+barnesHut (theta=1),4000,3964.91,25.2213
+cpu+barnesHut (theta=1),5000,5359.47,18.6586

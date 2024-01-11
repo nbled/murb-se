@@ -89,6 +89,7 @@ void argsReader(int argc, char **argv)
                      "\t\t\t - \"cpu+omp\"\n"
                      "\t\t\t - \"cpu+simd\"\n"
                      "\t\t\t - \"cpu+simd+omp\"\n"
+                     "\t\t\t - \"cpu+simd+pthread\"\n"
                      "\t\t\t - \"cpu+barnesHut\"\n"
                      "\t\t\t - \"cpu+barnesHut+omp\"\n"
                      "\t\t\t - \"gpu\"\n"
