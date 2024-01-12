@@ -1,7 +1,7 @@
 import subprocess
 
 optims = [
-    #"cpu+naive",
+#    "cpu+naive",
     "cpu+optim",
     "cpu+omp",
     "cpu+simd",
@@ -53,8 +53,17 @@ csv.close()
 
  """
 
+
+csv = open("../fps_per_theta.csv", "at")
+csv.write("optim,nbodies,ms,fps\n")
+
+
+
+optim = "cpu+barnesHut"
+theta = 1
 for nbodies in nbodies_list:
-        ms, fps = run_murb("cpu+barnesHut", nbodies, 100)
-        print(f"cpu+barnesHut (theta=1),{nbodies},{ms},{fps}")
+    ms, fps = run_murb(optim, nbodies, 30)
+    print(f"B-H {theta},{nbodies},{ms},{fps}")
+    csv.write(f"B-H {theta},{nbodies},{ms},{fps}\n")
 
 
